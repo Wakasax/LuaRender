@@ -1,5 +1,6 @@
 package com.lurarender;
 
+import java.util.Locale;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -10,26 +11,20 @@ public final class GLProfileGuard {
     }
 
     public static boolean shouldRejectUnsafeProfile(int majorVersion, int minorVersion, boolean isOpenGLES, String rendererString, String versionString) {
-        if (rendererString == null) {
-            rendererString = "unknown";
-        }
-        if (versionString == null) {
-            versionString = "unknown";
-        }
+        final String renderer = rendererString == null ? "unknown" : rendererString;
+        final String version = versionString == null ? "unknown" : versionString;
 
         if (isOpenGLES) {
-            // The LWJGL OpenGL ES profile is only valid for properly exposed ES contexts.
-            // We intentionally avoid forcing ES profile creation when the backend is older or hidden behind a legacy compatibility layer.
             if (majorVersion <= 1 || (majorVersion == 2 && minorVersion < 0)) {
                 LOGGER.warn("[LuaRender] OpenGL ES path is unavailable or unusable: version={} renderer={} vendorInfo={}",
-                    majorVersion + "." + minorVersion, rendererString, versionString);
+                    majorVersion + "." + minorVersion, renderer, version);
                 return true;
             }
         }
 
         if (!isOpenGLES && majorVersion < 2) {
             LOGGER.warn("[LuaRender] Legacy GL backend below minimum support threshold: version={} renderer={} vendorInfo={}",
-                majorVersion + "." + minorVersion, rendererString, versionString);
+                majorVersion + "." + minorVersion, renderer, version);
             return true;
         }
 
@@ -38,11 +33,12 @@ public final class GLProfileGuard {
 
     public static boolean isLegacyMobilePath(int majorVersion, int minorVersion, boolean isOpenGLES, String rendererString) {
         if (rendererString == null) {
-            rendererString = "unknown";
+            return false;
         }
 
+        final String normalized = rendererString.toLowerCase(Locale.ROOT);
         final boolean lowerThanDesktopCore = majorVersion < 3;
-        final boolean likelyHolyGL4ES = rendererString.toLowerCase().contains("gl4es") || rendererString.toLowerCase().contains("angrylizard");
+        final boolean likelyHolyGL4ES = normalized.contains("gl4es") || normalized.contains("angrylizard") || normalized.contains("mesa llvmpipe");
 
         return (isOpenGLES && majorVersion >= 2) || (lowerThanDesktopCore && likelyHolyGL4ES) || (majorVersion == 2 && !isOpenGLES);
     }

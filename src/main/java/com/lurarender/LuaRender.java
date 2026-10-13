@@ -1,7 +1,7 @@
 package com.lurarender;
 
 import cpw.mods.fml.common.Mod;
-import cpw.mods.fml.common.Mod.EventHandler;
+import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
@@ -22,19 +22,34 @@ public class LuaRender {
 
     public static final Logger LOGGER = LogManager.getLogger(MOD_NAME);
 
-    @EventHandler
+    @SidedProxy(
+        clientSide = "com.lurarender.proxy.ClientProxy",
+        serverSide = "com.lurarender.proxy.CommonProxy"
+    )
+    public static com.lurarender.proxy.CommonProxy proxy;
+
+    @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         LOGGER.info("[LuaRender] Initializing mobile-safe render compatibility layer.");
         GLProfileGuard.logBackendSummary();
+        if (proxy != null) {
+            proxy.preInit(event);
+        }
     }
 
-    @EventHandler
+    @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
         LOGGER.info("[LuaRender] Vanilla render path is preserved unless the backend passes compatibility checks.");
+        if (proxy != null) {
+            proxy.init(event);
+        }
     }
 
-    @EventHandler
+    @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event) {
         LOGGER.info("[LuaRender] Ready. Mobile fallback renderer is active only when supported by the host GL context.");
+        if (proxy != null) {
+            proxy.postInit(event);
+        }
     }
 }
