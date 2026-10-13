@@ -10,16 +10,18 @@ buildscript {
     }
 }
 
-apply plugin: 'forge'
-
-version = '0.1.0-experimental'
-group = 'com.lurarender'
-
+// IMPORTANT: declare the minecraft block BEFORE applying the 'forge' plugin.
+// ForgeGradle 1.2 expects this configuration to exist during plugin application.
 minecraft {
     version = '1.7.10-10.13.4.1614-1.7.10'
     runDir = 'run'
     mappings = 'stable_12'
 }
+
+apply plugin: 'forge'
+
+version = '0.1.0-experimental'
+group = 'com.lurarender'
 
 repositories {
     mavenCentral()
