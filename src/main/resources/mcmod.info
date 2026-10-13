@@ -1,0 +1,13 @@
+{
+  "modid": "lurarender",
+  "name": "LuaRender",
+  "description": "Mobile-safe rendering compatibility layer and optimization scaffold for Minecraft 1.7.10 based on the Angelica architecture.",
+  "version": "0.1.0-experimental",
+  "mcversion": "1.7.10",
+  "url": "https://github.com/Wakasax/LuaRender",
+  "authorList": ["Wakasax"],
+  "credits": "Derived from the GTNewHorizons/Angelica codebase and adapted for mobile compatibility.",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
