@@ -20,8 +20,17 @@ configurations {
 }
 
 dependencies {
-    // Provide Forge as compileOnly so the mod compiles against Forge APIs, but does not bundle it.
-    compileOnly 'net.minecraftforge:forge:10.13.4.1614-1.7.10'
+    // If you placed the Forge jar manually in libs/, use it as compileOnly to avoid remote resolution issues.
+    def localForge = file('libs/forge-10.13.4.1614-1.7.10.jar')
+    if (localForge.exists()) {
+        compileOnly files(localForge)
+        println "Using local Forge JAR: ${localForge}"
+    } else {
+        // Fallback to remote coordinate (will attempt to download from configured repositories)
+        compileOnly 'net.minecraftforge:forge:10.13.4.1614-1.7.10'
+        println "Using remote Forge coordinate (will attempt to download)."
+    }
+
     // Logging API used by the mod
     compileOnly 'org.apache.logging.log4j:log4j-api:2.17.2'
 }
@@ -50,4 +59,3 @@ jar {
 }
 
 // Ensure the build produces a jar in build/libs that can be placed in the mods folder.
-
