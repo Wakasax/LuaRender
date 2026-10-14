@@ -9,29 +9,83 @@ sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
 repositories {
-    mavenCentral()
+    // Keep repos as fallback if network works
+    maven { url 'https://maven.minecraftforge.net' }
     maven { url 'https://files.minecraftforge.net/maven' }
-    maven { url 'https://repo.spongepowered.org/maven' }
-    maven { url 'https://nexus.gtnewhorizons.com/repository/public/' }
+    mavenCentral()
 }
 
 configurations {
     compileOnly
 }
 
+// Helper: possible local jar names we accept
+ext.forgeCandidates = [
+    file('libs/forge-10.13.4.1614-1.7.10.jar'),
+    file('libs/forge-1.7.10-10.13.4.1614-1.7.10.jar'),
+    file('libs/forge-10.13.4.1614.jar')
+]
+
+// URL for source zip (user-provided)
+ext.forgeSourceUrl = 'https://maven.minecraftforge.net/net/minecraftforge/forge/1.7.10-10.13.4.1614-1.7.10/forge-1.7.10-10.13.4.1614-1.7.10-src.zip'
+ext.forgeSourceZip = file('libs/forge-src.zip')
+ext.forgeSourceDir = file('libs/forge-src')
+
+// Task: download source zip if not present
+tasks.register('downloadForgeSource') {
+    doLast {
+        if (!forgeSourceZip.exists()) {
+            println "Downloading Forge source zip to ${forgeSourceZip}..."
+            try {
+                ant.get(src: forgeSourceUrl, dest: forgeSourceZip)
+                println 'Download finished.'
+            } catch(Exception e) {
+                println "Warning: failed to download Forge source: ${e.message}"
+            }
+        } else {
+            println "Forge source zip already present: ${forgeSourceZip}"
+        }
+    }
+}
+
+// Task: extract source if zip present
+tasks.register('extractForgeSource') {
+    dependsOn 'downloadForgeSource'
+    doLast {
+        if (forgeSourceZip.exists()) {
+            if (!forgeSourceDir.exists()) forgeSourceDir.mkdirs()
+            println "Extracting ${forgeSourceZip} to ${forgeSourceDir}..."
+            ant.unzip(src: forgeSourceZip, dest: forgeSourceDir)
+            println 'Extract complete.'
+        } else {
+            println 'Forge source zip not found; skipping extract.'
+        }
+    }
+}
+
+// Determine the Forge JAR to use (local preferred)
+ext.chooseForgeJar = { ->
+    def found = forgeCandidates.find { it.exists() }
+    if (found) return found
+
+    // try alternative name (user provided URL name)
+    def alt = file('libs/forge-1.7.10-10.13.4.1614-1.7.10.jar')
+    if (alt.exists()) return alt
+
+    return null
+}
+
 dependencies {
-    // If you placed the Forge jar manually in libs/, use it as compileOnly to avoid remote resolution issues.
-    def localForge = file('libs/forge-10.13.4.1614-1.7.10.jar')
-    if (localForge.exists()) {
+    def localForge = chooseForgeJar()
+    if (localForge != null) {
         compileOnly files(localForge)
         println "Using local Forge JAR: ${localForge}"
     } else {
-        // Fallback to remote coordinate (will attempt to download from configured repositories)
-        compileOnly 'net.minecraftforge:forge:10.13.4.1614-1.7.10'
-        println "Using remote Forge coordinate (will attempt to download)."
+        // If not found locally, fall back to remote coordinate (will attempt to download from maven.minecraftforge.net)
+        compileOnly 'net.minecraftforge:forge:1.7.10-10.13.4.1614-1.7.10'
+        println "No local Forge JAR found; falling back to remote coordinate net.minecraftforge:forge:1.7.10-10.13.4.1614-1.7.10"
     }
 
-    // Logging API used by the mod
     compileOnly 'org.apache.logging.log4j:log4j-api:2.17.2'
 }
 
@@ -58,4 +112,7 @@ jar {
     }
 }
 
-// Ensure the build produces a jar in build/libs that can be placed in the mods folder.
+// Make sure extractForgeSource runs before IDE import tasks if needed
+tasks.matching { it.name == 'idea' || it.name == 'eclipse' || it.name == 'genIntellijRuns' }.configureEach {
+    dependsOn tasks.named('extractForgeSource')
+}
