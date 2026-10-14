@@ -1,51 +1,38 @@
-buildscript {
-    repositories {
-        mavenCentral()
-        maven { url = 'https://files.minecraftforge.net/maven' }
-        maven { url = 'https://repo.spongepowered.org/maven' }
-        maven { url = 'https://nexus.gtnewhorizons.com/repository/public/' }
-    }
-    dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2-SNAPSHOT'
-    }
+plugins {
+    id 'java'
 }
 
-// Provide a minecraft map on the project ext so older ForgeGradle can see it during plugin application.
-ext.minecraft = [
-    version: (project.hasProperty('mc_version') && project.hasProperty('forge_version')) ? "${project.property('mc_version')}-${project.property('forge_version')}-${project.property('mc_version')}" : '1.7.10-10.13.4.1614-1.7.10',
-    runDir: 'run',
-    mappings: 'stable_12'
-]
-
-apply plugin: 'forge'
-
-version = '0.1.0-experimental'
 group = 'com.lurarender'
+version = '0.1.0-experimental'
 
-minecraft {
-    version = project.ext.minecraft.version
-    runDir = project.ext.minecraft.runDir
-    mappings = project.ext.minecraft.mappings
-}
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 repositories {
     mavenCentral()
-    maven { url = 'https://nexus.gtnewhorizons.com/repository/public/' }
-    maven { url = 'https://files.minecraftforge.net/maven' }
+    maven { url 'https://files.minecraftforge.net/maven' }
+    maven { url 'https://repo.spongepowered.org/maven' }
+    maven { url 'https://nexus.gtnewhorizons.com/repository/public/' }
+}
+
+configurations {
+    compileOnly
 }
 
 dependencies {
-    // This repository intentionally keeps dependencies minimal and conservative.
-    // Full Angelica integration can be added later once the mobile compatibility layer is proven.
+    // Provide Forge as compileOnly so the mod compiles against Forge APIs, but does not bundle it.
+    compileOnly 'net.minecraftforge:forge:10.13.4.1614-1.7.10'
+    // Logging API used by the mod
+    compileOnly 'org.apache.logging.log4j:log4j-api:2.17.2'
 }
 
 processResources {
     inputs.property 'version', project.version
-    inputs.property 'mcversion', project.minecraft.version
+    inputs.property 'mcversion', project.hasProperty('mc_version') ? project.property('mc_version') : '1.7.10'
 
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'
-        expand 'version': project.version, 'mcversion': project.minecraft.version
+        expand 'version': project.version, 'mcversion': project.hasProperty('mc_version') ? project.property('mc_version') : '1.7.10'
     }
 
     from(sourceSets.main.resources.srcDirs) {
@@ -57,8 +44,10 @@ jar {
     manifest {
         attributes(
             'Implementation-Title': 'LuaRender',
-            'Implementation-Version': project.version,
-            'FMLCorePluginContainsFMLMod': 'true'
+            'Implementation-Version': project.version
         )
     }
 }
+
+// Ensure the build produces a jar in build/libs that can be placed in the mods folder.
+
