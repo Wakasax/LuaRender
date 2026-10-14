@@ -10,18 +10,23 @@ buildscript {
     }
 }
 
-// IMPORTANT: declare the minecraft block BEFORE applying the 'forge' plugin.
-// ForgeGradle 1.2 expects this configuration to exist during plugin application.
-minecraft {
-    version = '1.7.10-10.13.4.1614-1.7.10'
-    runDir = 'run'
-    mappings = 'stable_12'
-}
+// Provide a minecraft map on the project ext so older ForgeGradle can see it during plugin application.
+ext.minecraft = [
+    version: (project.hasProperty('mc_version') && project.hasProperty('forge_version')) ? "${project.property('mc_version')}-${project.property('forge_version')}-${project.property('mc_version')}" : '1.7.10-10.13.4.1614-1.7.10',
+    runDir: 'run',
+    mappings: 'stable_12'
+]
 
 apply plugin: 'forge'
 
 version = '0.1.0-experimental'
 group = 'com.lurarender'
+
+minecraft {
+    version = project.ext.minecraft.version
+    runDir = project.ext.minecraft.runDir
+    mappings = project.ext.minecraft.mappings
+}
 
 repositories {
     mavenCentral()
@@ -53,7 +58,6 @@ jar {
         attributes(
             'Implementation-Title': 'LuaRender',
             'Implementation-Version': project.version,
-            'FMLCorePlugin': '',
             'FMLCorePluginContainsFMLMod': 'true'
         )
     }
